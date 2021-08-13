@@ -4,12 +4,12 @@ date = "2021-8-10"
 +++
 
 ### Personal Information:
-- **Name:**   Andrew Foston BSc (Hons) Open
+- **Name:**   Andrew Foston
 - **Email:** 			andy 'at' foston.me
 - **Date of Birth:**		17th August 1982
 - **Driving Licence:** 	Full, clean.
 - **LinkedIn Profile:**	[https://uk.linkedin.com/in/andyfoston](https://uk.linkedin.com/in/andyfoston)
-- **GitHub profile:**	[https://github.com/andyfoston](https://github.com/andyfoston)
+- **GitHub Profile:**	[https://github.com/andyfoston](https://github.com/andyfoston)
 
 ### Notable Skills:
 - Kubernetes/Istio
@@ -31,11 +31,13 @@ date = "2021-8-10"
 - Implementing a service mesh (Istio) for greater visibility and control of traffic passing through the infrastructure.
 - Deploying updates to tools and Tesco Mobile services.
 - Maintaining Jenkins and GitHub actions CI/CD pipelines
+
 ***
 
 **Aug 19 - Oct 19, Tesco Mobile, Slough**  
 **Developer**  
 - Contributing to services used as part of the Tesco Mobile’s sales platform.
+
 ***
 
 **Sep 18 - Present day, UKCloud Ltd, Farnborough**  
@@ -44,6 +46,7 @@ date = "2021-8-10"
 - Linux configuration automation using Ansible
 - Completing code reviews for members of my team and for non-developer teams across the business.
 - Integration of monitoring tools into a “single pane of glass” monitoring tool using custom extensions written in JavaScript.
+
 ***
 
 **Mar 16 - Sep 18, Memset Ltd, Cranleigh**  
@@ -56,6 +59,7 @@ date = "2021-8-10"
 - Re-write of switch VLAN configuration generator to enable unit testing, support for VLANs on LAG groups,  multi-chassis LAG and new switch models.
 - Maintenance of the Linux firewall configuration generator, and adding features such as policy routing.
 - Automating configuration of our new monitoring tool (Zabbix)
+
 ***
 
 **Apr 15 - Feb 16, iPass UK Ltd, London**  
@@ -65,6 +69,7 @@ date = "2021-8-10"
 - Automated custom reports for customers
 - Built internal use frameworks to reduce large amounts of boilerplate code.
 - Improved integration with Django using basic Django features - such as Django forms, messaging, database routers, test runners and fixed 500 error reporting.
+
 ***
 
 **Feb 14 - Apr 15, Memset Ltd, Cranleigh**  
@@ -78,18 +83,21 @@ date = "2021-8-10"
 - Adding support for Xen PVHVM virtual machines.
 - Adding support for redundant cabling to physical servers.
 - Automate customer penetration testing and reporting using Nessus.
+
 ***
 
 **Mar 13 – Dec 13, BlackBerry, Slough**  
 **NOC Unix Administrator (3rd line)**  
 - Providing 3rd line support to the NOC, and assisting with monitoring and other roles when short-staffed.
 - Completing more significant and larger projects to assist the NOC members with troubleshooting common issues within the Blackberry network, including the development of a Python CGI tool to assist with tracing messages through the BlackBerry infrastructure.
+
 ***
 
 **Oct 12 – Mar 13, BlackBerry, Slough**  
 **Acting NOC Systems Administrator (3rd line)**  
 - Providing 3rd line support to the NOC, and assisting with monitoring and other roles when short-staffed.
 - Completing more significant and larger projects to assist the NOC members with troubleshooting common issues within the Blackberry network, including the development of a Python CGI tool to assist with tracing messages through the BlackBerry infrastructure.
+
 ***
 
 **Dec 11 – Oct 12, BlackBerry, Slough**  
@@ -99,6 +107,7 @@ date = "2021-8-10"
 - Executing pre-planned changes to the Blackberry Network.
 - Taking an active role on troubleshooting conference calls, by providing information and answers to questions and requests posed by Senior and Specialist members of the team, as well the pro-active investigation of the cause of and impact of these issues.
 - Development of Python-based CLI tools to aid investigation of common complaints, as well as to develop a greater understanding of the inner workings of the Blackberry network
+
 ***
 
 **Oct 10 – Dec 11, BlackBerry, Slough**  
@@ -108,6 +117,7 @@ date = "2021-8-10"
 - Scheduling troubleshooting conference calls with both external and internal parties.
 - Documenting steps taken by all parties on troubleshooting calls, to be used for establishing the root cause analysis for impacting issues.
 - Developing a command-line Java tool to aid troubleshooting of issues within the Blackberry Network.
+
 ***
 
 **Apr 09 – Sep 10, 2e2 UK Limited, Reading**  
