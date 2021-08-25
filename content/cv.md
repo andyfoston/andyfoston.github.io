@@ -40,7 +40,7 @@ date = "2021-8-10"
 
 ***
 
-**Sep 18 - Present day, UKCloud Ltd, Farnborough**  
+**Sep 18 - Aug 19, UKCloud Ltd, Farnborough**  
 **Software Engineer**  
 - Developing tools to automate invoice generation and reporting
 - Linux configuration automation using Ansible
