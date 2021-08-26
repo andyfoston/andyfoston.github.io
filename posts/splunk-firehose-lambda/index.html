@@ -1,0 +1,245 @@
+<!doctype html><html lang=en>
+<head>
+<title>Processing Kenesis Firehose logs for Splunk :: Andy's Blog</title>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<meta name=description content="Golang example lambda for processing Kenesis Firehose logs destined for Splunk">
+<meta name=keywords content="Programming,Python,Rust,Go,Golang,Kubernetes,K8s">
+<meta name=robots content="noodp">
+<link rel=canonical href=/posts/splunk-firehose-lambda/>
+<link rel=stylesheet href=/assets/style.css>
+<link rel=stylesheet href=/assets/blue.css>
+<link rel=apple-touch-icon href=/img/apple-touch-icon-192x192.png>
+<link rel="shortcut icon" href=/img/favicon/blue.png>
+<meta name=twitter:card content="summary">
+<meta property="og:locale" content="en">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Processing Kenesis Firehose logs for Splunk">
+<meta property="og:description" content="Golang example lambda for processing Kenesis Firehose logs destined for Splunk">
+<meta property="og:url" content="/posts/splunk-firehose-lambda/">
+<meta property="og:site_name" content="Andy's Blog">
+<meta property="og:image" content="/img/favicon/blue.png">
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+<meta property="article:published_time" content="2021-08-26 00:00:00 +0000 UTC">
+</head>
+<body class=blue>
+<div class="container headings--one-size">
+<header class=header>
+<div class=header__inner>
+<div class=header__logo>
+<a href=/>
+<div class=logo>
+Andy's Blog
+</div>
+</a>
+</div>
+<div class=menu-trigger>menu</div>
+</div>
+<nav class=menu>
+<ul class="menu__inner menu__inner--desktop">
+<li><a href=/about>About Me</a></li>
+<li><a href=/cv>CV</a></li>
+</ul>
+<ul class="menu__inner menu__inner--mobile">
+<li><a href=/about>About Me</a></li>
+<li><a href=/cv>CV</a></li>
+</ul>
+</nav>
+</header>
+<div class=content>
+<div class=post>
+<h1 class=post-title>
+<a href=/posts/splunk-firehose-lambda/>Processing Kenesis Firehose logs for Splunk</a></h1>
+<div class=post-meta>
+<span class=post-date>
+2021-08-26
+</span>
+<span class=post-author>:: Andy Foston</span>
+</div>
+<div class=post-content><div>
+<p>For a project at work, we needed to set up Kinesis Firehose to send logs from a provider’s logging
+infrastructure (New Relic) into our logging infrastructure.</p>
+<p>This by itself partly solved our use case, but there was a huge amount of logs that were coming
+in which was essentially noise, and the logs that were coming in were for both nonproduction and
+production and they were being routed to the same index.</p>
+<p>There were many ways we could have solved this:</p>
+<ol>
+<li>By asking New Relic to set up filtering/routing on their side (not ideal as we are not the owners of
+this account and it depends on 3rd parties doing this work for us)</li>
+<li>Configuring our Splunk Heavy Forwarder to preprocess these before forwarding to Splunk Cloud,
+but this wasn’t a redundant service and would have meant that if the Heavy Forwarder had issues,
+then we’d lose logging for some time.</li>
+</ol>
+<p>In the end, we decided to use a Golang lambda to process these. To be honest, I found the
+documentation a little sparse for doing this and figured it could be a good opportunity to help
+others who are trying to do something similar to me.</p>
+<h2 id=skeleton-lambda-example>Skeleton lambda example<a href=#skeleton-lambda-example class=hanchor arialabel=Anchor>&#8983;</a> </h2>
+<p>Some of this is probably documented elsewhere, but let&rsquo;s start off with a skeleton lambda:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>package</span> <span style=color:#a6e22e>main</span>
+
+<span style=color:#f92672>import</span> (
+	<span style=color:#e6db74>&#34;fmt&#34;</span>
+
+	<span style=color:#e6db74>&#34;github.com/aws/aws-lambda-go/events&#34;</span>
+	<span style=color:#e6db74>&#34;github.com/aws/aws-lambda-go/lambda&#34;</span>
+)
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>handleRequest</span>(<span style=color:#a6e22e>evnt</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseEvent</span>) (<span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponse</span>, <span style=color:#66d9ef>error</span>) {
+
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;InvocationID: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>InvocationID</span>)
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;DeliveryStreamArn: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>DeliveryStreamArn</span>)
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;Region: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>Region</span>)
+
+	<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>response</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponse</span>
+
+	<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>record</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>Records</span> {
+		<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;RecordID: %s\n&#34;</span>, <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>RecordID</span>)
+		<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;ApproximateArrivalTimestamp: %s\n&#34;</span>, <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>ApproximateArrivalTimestamp</span>)
+
+		<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>transformedRecord</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponseRecord</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>RecordID</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>RecordID</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Result</span> = <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseTransformedStateOk</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Data</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>Data</span>
+
+		<span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>Records</span> = append(<span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>Records</span>, <span style=color:#a6e22e>transformedRecord</span>)
+	}
+
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>response</span>, <span style=color:#66d9ef>nil</span>
+}
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
+	<span style=color:#a6e22e>lambda</span>.<span style=color:#a6e22e>Start</span>(<span style=color:#a6e22e>handleRequest</span>)
+}
+</code></pre></div><p>This snippet essentially does nothing to the records, but it provides a starting point to begin
+processing these records.</p>
+<h3 id=support-routing-records-to-splunk-indexes-other-than-the-default>Support routing records to Splunk indexes other than the default<a href=#support-routing-records-to-splunk-indexes-other-than-the-default class=hanchor arialabel=Anchor>&#8983;</a> </h3>
+<p>It is possible to inject an index name into the payload for Splunk, however there are a
+few things that need to be done first.</p>
+<p>Firstly, the Splunk HEC needs to have permission to write to all indexes that you plan to use
+here. If you do not, Splunk will likely reject them and they&rsquo;ll likely end up being written
+to the S3 bucket for unprocessable events (assuming you&rsquo;ve set this up).</p>
+<p>The other thing is that the &lsquo;Raw endpoint&rsquo; will ignore the index parameter, and it&rsquo;ll just become part
+of the logging payload stored in Splunk.</p>
+<p>To fix this, you&rsquo;ll need to change the Splunk endpoint type to use an &lsquo;Event endpoint&rsquo;. However, this
+requires some more changes to our lambda in order to work:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#f92672>package</span> <span style=color:#a6e22e>main</span>
+
+<span style=color:#f92672>import</span> (
+  <span style=color:#e6db74>&#34;encoding/json&#34;</span>
+	<span style=color:#e6db74>&#34;fmt&#34;</span>
+  <span style=color:#e6db74>&#34;strings&#34;</span>
+
+	<span style=color:#e6db74>&#34;github.com/aws/aws-lambda-go/events&#34;</span>
+	<span style=color:#e6db74>&#34;github.com/aws/aws-lambda-go/lambda&#34;</span>
+)
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>formatRecordForSplunk</span>(<span style=color:#a6e22e>data</span> <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>]<span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>RawMessage</span>, <span style=color:#a6e22e>index</span> <span style=color:#66d9ef>string</span>) ([]<span style=color:#66d9ef>byte</span>, <span style=color:#66d9ef>error</span>) {
+	<span style=color:#a6e22e>response</span> <span style=color:#f92672>:=</span> make(<span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>]<span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>RawMessage</span>)
+	<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;time&#34;</span>] = <span style=color:#a6e22e>data</span>[<span style=color:#e6db74>&#34;timestamp&#34;</span>]
+	<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;sourcetype&#34;</span>] = <span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>RawMessage</span>(<span style=color:#e6db74>`&#34;_json&#34;`</span>)
+
+	<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;host&#34;</span>] = <span style=color:#a6e22e>data</span>[<span style=color:#e6db74>&#34;cluster&#34;</span>]
+	<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;source&#34;</span>] = <span style=color:#a6e22e>data</span>[<span style=color:#e6db74>&#34;eventType&#34;</span>]
+
+	<span style=color:#a6e22e>event</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>Marshal</span>(<span style=color:#a6e22e>data</span>)
+	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+		<span style=color:#66d9ef>return</span> []byte(<span style=color:#e6db74>&#34;&#34;</span>), <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;Failed to marshal event \&#34;%s\&#34;. Error: %s\n&#34;</span>, <span style=color:#a6e22e>data</span>, <span style=color:#a6e22e>err</span>)
+	} <span style=color:#66d9ef>else</span> {
+		<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;event&#34;</span>] = <span style=color:#a6e22e>event</span>
+	}
+	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>index</span> <span style=color:#f92672>!=</span> <span style=color:#e6db74>&#34;&#34;</span> {
+		<span style=color:#a6e22e>response</span>[<span style=color:#e6db74>&#34;index&#34;</span>] = []byte(<span style=color:#a6e22e>index</span>)
+	}
+
+	<span style=color:#a6e22e>marshalledResponse</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>Marshal</span>(<span style=color:#a6e22e>response</span>)
+	<span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+		<span style=color:#66d9ef>return</span> []byte(<span style=color:#e6db74>&#34;&#34;</span>), <span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Errorf</span>(<span style=color:#e6db74>&#34;Failed to marshal splunk record \&#34;%s\&#34;. Error %s\n&#34;</span>, <span style=color:#a6e22e>response</span>, <span style=color:#a6e22e>err</span>)
+	}
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>marshalledResponse</span>, <span style=color:#66d9ef>nil</span>
+}
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>processRecord</span>(<span style=color:#a6e22e>record</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseRecord</span>) (<span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponseRecord</span>, <span style=color:#66d9ef>error</span>) {
+  <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>data</span> <span style=color:#66d9ef>map</span>[<span style=color:#66d9ef>string</span>]<span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>RawMessage</span>
+	<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>transformedRecord</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponseRecord</span>
+  <span style=color:#66d9ef>var</span> <span style=color:#a6e22e>index</span> <span style=color:#66d9ef>string</span>
+	<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>RecordID</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>RecordID</span>
+	<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Result</span> = <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseTransformedStateOk</span>
+	<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Data</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>Data</span>
+
+  <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>json</span>.<span style=color:#a6e22e>Unmarshal</span>(<span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>Data</span>, <span style=color:#f92672>&amp;</span><span style=color:#a6e22e>data</span>)
+  <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+    <span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Result</span> = <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseTransformedStateFailed</span>
+    <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>transformedRecord</span>
+  }
+
+  <span style=color:#a6e22e>cluster</span>, <span style=color:#a6e22e>ok</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>data</span>[<span style=color:#e6db74>&#34;cluster&#34;</span>]
+  <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>ok</span> {
+    <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>strings</span>.<span style=color:#a6e22e>Contains</span>(string(<span style=color:#a6e22e>cluster</span>), <span style=color:#e6db74>&#34;dev&#34;</span>) {
+      <span style=color:#a6e22e>index</span> = <span style=color:#e6db74>&#34;dev_index&#34;</span>
+    }
+  }
+
+  <span style=color:#a6e22e>splunkRecord</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>formatRecordForSplunk</span>(<span style=color:#a6e22e>data</span>, <span style=color:#a6e22e>index</span>)
+  <span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+    <span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Result</span> = <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseTransformedStateFailed</span>
+  } <span style=color:#66d9ef>else</span> {
+    <span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Data</span> = <span style=color:#a6e22e>splunkRecord</span>
+  }
+
+  <span style=color:#66d9ef>return</span> <span style=color:#a6e22e>transformedRecord</span>
+}
+
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>handleRequest</span>(<span style=color:#a6e22e>evnt</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseEvent</span>) (<span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponse</span>, <span style=color:#66d9ef>error</span>) {
+
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;InvocationID: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>InvocationID</span>)
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;DeliveryStreamArn: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>DeliveryStreamArn</span>)
+	<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;Region: %s\n&#34;</span>, <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>Region</span>)
+
+	<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>response</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponse</span>
+
+	<span style=color:#66d9ef>for</span> <span style=color:#a6e22e>_</span>, <span style=color:#a6e22e>record</span> <span style=color:#f92672>:=</span> <span style=color:#66d9ef>range</span> <span style=color:#a6e22e>evnt</span>.<span style=color:#a6e22e>Records</span> {
+		<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;RecordID: %s\n&#34;</span>, <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>RecordID</span>)
+		<span style=color:#a6e22e>fmt</span>.<span style=color:#a6e22e>Printf</span>(<span style=color:#e6db74>&#34;ApproximateArrivalTimestamp: %s\n&#34;</span>, <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>ApproximateArrivalTimestamp</span>)
+
+		<span style=color:#66d9ef>var</span> <span style=color:#a6e22e>transformedRecord</span> <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseResponseRecord</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>RecordID</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>RecordID</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Result</span> = <span style=color:#a6e22e>events</span>.<span style=color:#a6e22e>KinesisFirehoseTransformedStateOk</span>
+		<span style=color:#a6e22e>transformedRecord</span>.<span style=color:#a6e22e>Data</span> = <span style=color:#a6e22e>record</span>.<span style=color:#a6e22e>Data</span>
+
+		<span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>Records</span> = append(<span style=color:#a6e22e>response</span>.<span style=color:#a6e22e>Records</span>, <span style=color:#a6e22e>transformedRecord</span>)
+	}
+
+	<span style=color:#66d9ef>return</span> <span style=color:#a6e22e>response</span>, <span style=color:#66d9ef>nil</span>
+}
+
+<span style=color:#66d9ef>func</span> <span style=color:#a6e22e>main</span>() {
+	<span style=color:#a6e22e>lambda</span>.<span style=color:#a6e22e>Start</span>(<span style=color:#a6e22e>handleRequest</span>)
+}
+</code></pre></div><p>This returns an object containing a few key fields that are required by Splunk, like the <code>source</code>, <code>sourcetype</code>, <code>host</code>, <code>time</code>
+and optionally the <code>index</code> field, the actual event payload is then written to the <code>event</code> field.</p>
+<h3 id=dropping-records>Dropping records<a href=#dropping-records class=hanchor arialabel=Anchor>&#8983;</a> </h3>
+<p>From the above, you may have noticed lines like <code>transformedRecord.Result = events.KinesisFirehoseTransformedStateFailed</code> lines.
+The <code>...StateFailed</code> triggers Firehose to write the log to the backup destination (probably an S3 bucket).</p>
+<p>However, if you want to drop events, you can return the event payload as normal, but set the <code>Result</code> to <code>events.KinesisFirehoseTransformedStateDropped</code>
+this&rsquo;ll trigger the event to not be forwared to Splunk and not to be written to the backup destination either.</p>
+<h3 id=disclaimer>Disclaimer<a href=#disclaimer class=hanchor arialabel=Anchor>&#8983;</a> </h3>
+<p>The code in here is a heavy stripped down and refactored version of what we&rsquo;re using for our lambda, so these versions have not
+actually been tested directly, but should hopefully provide a basis to start from.</p>
+</div></div>
+</div>
+</div>
+<footer class=footer>
+<div class=footer__inner>
+<div class=copyright>
+<span>© 2021 Powered by <a href=http://gohugo.io>Hugo</a></span>
+<span>:: Theme made by <a href=https://twitter.com/panr>panr</a></span>
+</div>
+</div>
+</footer>
+<script src=/assets/main.js></script>
+<script src=/assets/prism.js></script>
+</div>
+</body>
+</html>
