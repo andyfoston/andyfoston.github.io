@@ -1,5 +1,8 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Andy's Blog</title><link>/</link><description>Recent content on Andy's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-gb</language><lastBuildDate>Thu, 26 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>Processing Kenesis Firehose logs for Splunk</title><link>/posts/splunk-firehose-lambda/</link><pubDate>Thu, 26 Aug 2021 00:00:00 +0000</pubDate><guid>/posts/splunk-firehose-lambda/</guid><description>For a project at work, we needed to set up Kinesis Firehose to send logs from a provider’s logging infrastructure (New Relic) into our logging infrastructure.
-This by itself partly solved our use case, but there was a huge amount of logs that were coming in which was essentially noise, and the logs that were coming in were for both nonproduction and production and they were being routed to the same index.</description><content>&lt;p>For a project at work, we needed to set up Kinesis Firehose to send logs from a provider’s logging
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Andy's Blog</title><link>/</link><description>Recent content on Andy's Blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Thu, 26 Aug 2021 00:00:00 +0000</lastBuildDate><atom:link href="/index.xml" rel="self" type="application/rss+xml"/><item><title>Processing Kenesis Firehose logs for Splunk</title><link>/posts/splunk-firehose-lambda/</link><pubDate>Thu, 26 Aug 2021 00:00:00 +0000</pubDate><guid>/posts/splunk-firehose-lambda/</guid><description>&lt;p>For a project at work, we needed to set up Kinesis Firehose to send logs from a provider’s logging
+infrastructure (New Relic) into our logging infrastructure.&lt;/p>
+&lt;p>This by itself partly solved our use case, but there was a huge amount of logs that were coming
+in which was essentially noise, and the logs that were coming in were for both nonproduction and
+production and they were being routed to the same index.&lt;/p></description><content>&lt;p>For a project at work, we needed to set up Kinesis Firehose to send logs from a provider’s logging
 infrastructure (New Relic) into our logging infrastructure.&lt;/p>
 &lt;p>This by itself partly solved our use case, but there was a huge amount of logs that were coming
 in which was essentially noise, and the logs that were coming in were for both nonproduction and
@@ -17,32 +20,42 @@ documentation a little sparse for doing this and figured it could be a good oppo
 others who are trying to do something similar to me.&lt;/p>
 &lt;h2 id="skeleton-lambda-example">Skeleton lambda example&lt;/h2>
 &lt;p>Some of this is probably documented elsewhere, but let&amp;rsquo;s start off with a skeleton lambda:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>
-&lt;span style="color:#f92672">import&lt;/span> (
-&lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/events&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/lambda&amp;#34;&lt;/span>
-)
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">handleRequest&lt;/span>(&lt;span style="color:#a6e22e">evnt&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseEvent&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;InvocationID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">InvocationID&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;DeliveryStreamArn: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">DeliveryStreamArn&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Region: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Region&lt;/span>)
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>
-&lt;span style="color:#66d9ef">for&lt;/span> &lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#66d9ef">range&lt;/span> &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> {
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;RecordID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ApproximateArrivalTimestamp: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">ApproximateArrivalTimestamp&lt;/span>)
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
-&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> = append(&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span>, &lt;span style="color:#a6e22e">transformedRecord&lt;/span>)
-}
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
-&lt;span style="color:#a6e22e">lambda&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">handleRequest&lt;/span>)
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>This snippet essentially does nothing to the records, but it provides a starting point to begin
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> (
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/events&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/lambda&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">handleRequest&lt;/span>(&lt;span style="color:#a6e22e">evnt&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseEvent&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;InvocationID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">InvocationID&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;DeliveryStreamArn: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">DeliveryStreamArn&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Region: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Region&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> &lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#66d9ef">range&lt;/span> &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;RecordID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ApproximateArrivalTimestamp: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">ApproximateArrivalTimestamp&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> = append(&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span>, &lt;span style="color:#a6e22e">transformedRecord&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">lambda&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">handleRequest&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This snippet essentially does nothing to the records, but it provides a starting point to begin
 processing these records.&lt;/p>
 &lt;h3 id="support-routing-records-to-splunk-indexes-other-than-the-default">Support routing records to Splunk indexes other than the default&lt;/h3>
 &lt;p>It is possible to inject an index name into the payload for Splunk, however there are a
@@ -54,81 +67,101 @@ to the S3 bucket for unprocessable events (assuming you&amp;rsquo;ve set this up
 of the logging payload stored in Splunk.&lt;/p>
 &lt;p>To fix this, you&amp;rsquo;ll need to change the Splunk endpoint type to use an &amp;lsquo;Event endpoint&amp;rsquo;. However, this
 requires some more changes to our lambda in order to work:&lt;/p>
-&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4">&lt;code class="language-go" data-lang="go">&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>
-&lt;span style="color:#f92672">import&lt;/span> (
-&lt;span style="color:#e6db74">&amp;#34;encoding/json&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;strings&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/events&amp;#34;&lt;/span>
-&lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/lambda&amp;#34;&lt;/span>
-)
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">formatRecordForSplunk&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span> &lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>, &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>) ([]&lt;span style="color:#66d9ef">byte&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
-&lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> make(&lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>)
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;time&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;timestamp&amp;#34;&lt;/span>]
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;sourcetype&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>(&lt;span style="color:#e6db74">`&amp;#34;_json&amp;#34;`&lt;/span>)
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;host&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;cluster&amp;#34;&lt;/span>]
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;source&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;eventType&amp;#34;&lt;/span>]
-&lt;span style="color:#a6e22e">event&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Marshal&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> []byte(&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>), &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Errorf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Failed to marshal event \&amp;#34;%s\&amp;#34;. Error: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">data&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>)
-} &lt;span style="color:#66d9ef">else&lt;/span> {
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;event&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">event&lt;/span>
-}
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span> {
-&lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;index&amp;#34;&lt;/span>] = []byte(&lt;span style="color:#a6e22e">index&lt;/span>)
-}
-&lt;span style="color:#a6e22e">marshalledResponse&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Marshal&lt;/span>(&lt;span style="color:#a6e22e">response&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#66d9ef">return&lt;/span> []byte(&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>), &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Errorf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Failed to marshal splunk record \&amp;#34;%s\&amp;#34;. Error %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>)
-}
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">marshalledResponse&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">processRecord&lt;/span>(&lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseRecord&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">data&lt;/span> &lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
-&lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Unmarshal&lt;/span>(&lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>, &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">data&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateFailed&lt;/span>
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>
-}
-&lt;span style="color:#a6e22e">cluster&lt;/span>, &lt;span style="color:#a6e22e">ok&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;cluster&amp;#34;&lt;/span>]
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">ok&lt;/span> {
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">strings&lt;/span>.&lt;span style="color:#a6e22e">Contains&lt;/span>(string(&lt;span style="color:#a6e22e">cluster&lt;/span>), &lt;span style="color:#e6db74">&amp;#34;dev&amp;#34;&lt;/span>) {
-&lt;span style="color:#a6e22e">index&lt;/span> = &lt;span style="color:#e6db74">&amp;#34;dev_index&amp;#34;&lt;/span>
-}
-}
-&lt;span style="color:#a6e22e">splunkRecord&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">formatRecordForSplunk&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span>, &lt;span style="color:#a6e22e">index&lt;/span>)
-&lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateFailed&lt;/span>
-} &lt;span style="color:#66d9ef">else&lt;/span> {
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">splunkRecord&lt;/span>
-}
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">handleRequest&lt;/span>(&lt;span style="color:#a6e22e">evnt&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseEvent&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;InvocationID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">InvocationID&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;DeliveryStreamArn: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">DeliveryStreamArn&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Region: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Region&lt;/span>)
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>
-&lt;span style="color:#66d9ef">for&lt;/span> &lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#66d9ef">range&lt;/span> &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> {
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;RecordID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>)
-&lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ApproximateArrivalTimestamp: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">ApproximateArrivalTimestamp&lt;/span>)
-&lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
-&lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
-&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> = append(&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span>, &lt;span style="color:#a6e22e">transformedRecord&lt;/span>)
-}
-&lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
-}
-&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
-&lt;span style="color:#a6e22e">lambda&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">handleRequest&lt;/span>)
-}
-&lt;/code>&lt;/pre>&lt;/div>&lt;p>This returns an object containing a few key fields that are required by Splunk, like the &lt;code>source&lt;/code>, &lt;code>sourcetype&lt;/code>, &lt;code>host&lt;/code>, &lt;code>time&lt;/code>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-go" data-lang="go">&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">package&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#f92672">import&lt;/span> (
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;encoding/json&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;fmt&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;strings&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/events&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#e6db74">&amp;#34;github.com/aws/aws-lambda-go/lambda&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">formatRecordForSplunk&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span> &lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>, &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>) ([]&lt;span style="color:#66d9ef">byte&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> make(&lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;time&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;timestamp&amp;#34;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;sourcetype&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>(&lt;span style="color:#e6db74">`&amp;#34;_json&amp;#34;`&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;host&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;cluster&amp;#34;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;source&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;eventType&amp;#34;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">event&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Marshal&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> []byte(&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>), &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Errorf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Failed to marshal event \&amp;#34;%s\&amp;#34;. Error: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">data&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> } &lt;span style="color:#66d9ef">else&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;event&amp;#34;&lt;/span>] = &lt;span style="color:#a6e22e">event&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;index&amp;#34;&lt;/span>] = []byte(&lt;span style="color:#a6e22e">index&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">marshalledResponse&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Marshal&lt;/span>(&lt;span style="color:#a6e22e">response&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> []byte(&lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>), &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Errorf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Failed to marshal splunk record \&amp;#34;%s\&amp;#34;. Error %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">marshalledResponse&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">processRecord&lt;/span>(&lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseRecord&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">data&lt;/span> &lt;span style="color:#66d9ef">map&lt;/span>[&lt;span style="color:#66d9ef">string&lt;/span>]&lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">RawMessage&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">index&lt;/span> &lt;span style="color:#66d9ef">string&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">json&lt;/span>.&lt;span style="color:#a6e22e">Unmarshal&lt;/span>(&lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>, &lt;span style="color:#f92672">&amp;amp;&lt;/span>&lt;span style="color:#a6e22e">data&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateFailed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">cluster&lt;/span>, &lt;span style="color:#a6e22e">ok&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">data&lt;/span>[&lt;span style="color:#e6db74">&amp;#34;cluster&amp;#34;&lt;/span>]
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">ok&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">strings&lt;/span>.&lt;span style="color:#a6e22e">Contains&lt;/span>(string(&lt;span style="color:#a6e22e">cluster&lt;/span>), &lt;span style="color:#e6db74">&amp;#34;dev&amp;#34;&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">index&lt;/span> = &lt;span style="color:#e6db74">&amp;#34;dev_index&amp;#34;&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">splunkRecord&lt;/span>, &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#a6e22e">formatRecordForSplunk&lt;/span>(&lt;span style="color:#a6e22e">data&lt;/span>, &lt;span style="color:#a6e22e">index&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">if&lt;/span> &lt;span style="color:#a6e22e">err&lt;/span> &lt;span style="color:#f92672">!=&lt;/span> &lt;span style="color:#66d9ef">nil&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateFailed&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> } &lt;span style="color:#66d9ef">else&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">splunkRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">handleRequest&lt;/span>(&lt;span style="color:#a6e22e">evnt&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseEvent&lt;/span>) (&lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>, &lt;span style="color:#66d9ef">error&lt;/span>) {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;InvocationID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">InvocationID&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;DeliveryStreamArn: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">DeliveryStreamArn&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;Region: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Region&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponse&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">for&lt;/span> &lt;span style="color:#a6e22e">_&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span> &lt;span style="color:#f92672">:=&lt;/span> &lt;span style="color:#66d9ef">range&lt;/span> &lt;span style="color:#a6e22e">evnt&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;RecordID: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">fmt&lt;/span>.&lt;span style="color:#a6e22e">Printf&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;ApproximateArrivalTimestamp: %s\n&amp;#34;&lt;/span>, &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">ApproximateArrivalTimestamp&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">var&lt;/span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span> &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseResponseRecord&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">RecordID&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Result&lt;/span> = &lt;span style="color:#a6e22e">events&lt;/span>.&lt;span style="color:#a6e22e">KinesisFirehoseTransformedStateOk&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">transformedRecord&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span> = &lt;span style="color:#a6e22e">record&lt;/span>.&lt;span style="color:#a6e22e">Data&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span> = append(&lt;span style="color:#a6e22e">response&lt;/span>.&lt;span style="color:#a6e22e">Records&lt;/span>, &lt;span style="color:#a6e22e">transformedRecord&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> }
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#66d9ef">return&lt;/span> &lt;span style="color:#a6e22e">response&lt;/span>, &lt;span style="color:#66d9ef">nil&lt;/span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#66d9ef">func&lt;/span> &lt;span style="color:#a6e22e">main&lt;/span>() {
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> &lt;span style="color:#a6e22e">lambda&lt;/span>.&lt;span style="color:#a6e22e">Start&lt;/span>(&lt;span style="color:#a6e22e">handleRequest&lt;/span>)
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>}
+&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>This returns an object containing a few key fields that are required by Splunk, like the &lt;code>source&lt;/code>, &lt;code>sourcetype&lt;/code>, &lt;code>host&lt;/code>, &lt;code>time&lt;/code>
 and optionally the &lt;code>index&lt;/code> field, the actual event payload is then written to the &lt;code>event&lt;/code> field.&lt;/p>
 &lt;h3 id="dropping-records">Dropping records&lt;/h3>
 &lt;p>From the above, you may have noticed lines like &lt;code>transformedRecord.Result = events.KinesisFirehoseTransformedStateFailed&lt;/code> lines.
@@ -137,12 +170,39 @@ The &lt;code>...StateFailed&lt;/code> triggers Firehose to write the log to the 
 this&amp;rsquo;ll trigger the event to not be forwared to Splunk and not to be written to the backup destination either.&lt;/p>
 &lt;h3 id="disclaimer">Disclaimer&lt;/h3>
 &lt;p>The code in here is a heavy stripped down and refactored version of what we&amp;rsquo;re using for our lambda, so these versions have not
-actually been tested directly, but should hopefully provide a basis to start from.&lt;/p></content></item><item><title>About Me</title><link>/about/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/about/</guid><description>My name is Andy and I&amp;rsquo;m a software developer and Kubernetes adminstrator.
-My main programming language is Python, but I&amp;rsquo;m also interested in Golang and Rust as well.
-I live in Bracknell, UK with my wife, Amy, and our 3 kids Kian, Orla and Quinn.</description><content>&lt;p>My name is Andy and I&amp;rsquo;m a software developer and Kubernetes adminstrator.&lt;/p>
-&lt;p>My main programming language is Python, but I&amp;rsquo;m also interested in Golang and Rust as well.&lt;/p>
-&lt;p>I live in Bracknell, UK with my wife, Amy, and our 3 kids Kian, Orla and Quinn.&lt;/p>
-&lt;img src="/img/family.jpg" alt="Hello Friend" class="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" /></content></item><item><title>Curriculum Vitae</title><link>/cv/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>/cv/</guid><description>Personal Information: Name: Andrew Foston Email: andy &amp;lsquo;at&amp;rsquo; foston.me Date of Birth: 17th August 1982 Driving Licence: Full, clean. LinkedIn Profile: https://uk.linkedin.com/in/andyfoston GitHub Profile: https://github.com/andyfoston Notable Skills: Kubernetes/Istio IaC tools, like: Terraform, Packer &amp;amp; Ansible. Python/Django/Flask Linux Education: 07/05/05 – 21/02/12 BSc (Honours) Open – Open University 30/09/06 – 31/12/08 Diploma in Computing – Open University 07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University 2000 – 2001 BTEC HNC Computing and Software Engineering (Incomplete) 1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’ Career Summary: Oct 19 - Present day, Tesco Mobile, Slough</description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
+actually been tested directly, but should hopefully provide a basis to start from.&lt;/p></content></item><item><title>About Me</title><link>/about/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/about/</guid><description>&lt;p>My name is Andy and I&amp;rsquo;m a software developer and SRE.&lt;/p>
+&lt;p>My main programming language is Python, but I also work with Go and I&amp;rsquo;m interested/played with Rust as well.&lt;/p>
+&lt;p>I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra&lt;/p>
+&lt;img src="/img/family.jpg" alt="Family photo with my wife and 4 kids" class="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" /></description><content>&lt;p>My name is Andy and I&amp;rsquo;m a software developer and SRE.&lt;/p>
+&lt;p>My main programming language is Python, but I also work with Go and I&amp;rsquo;m interested/played with Rust as well.&lt;/p>
+&lt;p>I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra&lt;/p>
+&lt;img src="/img/family.jpg" alt="Family photo with my wife and 4 kids" class="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" /></content></item><item><title>Curriculum Vitae</title><link>/cv/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/cv/</guid><description>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
+&lt;ul>
+&lt;li>&lt;strong>Name:&lt;/strong> Andrew Foston&lt;/li>
+&lt;li>&lt;strong>Email:&lt;/strong> andy &amp;lsquo;at&amp;rsquo; foston.me&lt;/li>
+&lt;li>&lt;strong>Date of Birth:&lt;/strong> 17th August 1982&lt;/li>
+&lt;li>&lt;strong>Driving Licence:&lt;/strong> Full, clean.&lt;/li>
+&lt;li>&lt;strong>LinkedIn Profile:&lt;/strong> &lt;a href="https://uk.linkedin.com/in/andyfoston">https://uk.linkedin.com/in/andyfoston&lt;/a>&lt;/li>
+&lt;li>&lt;strong>GitHub Profile:&lt;/strong> &lt;a href="https://github.com/andyfoston">https://github.com/andyfoston&lt;/a>&lt;/li>
+&lt;/ul>
+&lt;h3 id="notable-skills">Notable Skills:&lt;/h3>
+&lt;ul>
+&lt;li>Kubernetes/Istio&lt;/li>
+&lt;li>IaC tools, like: Terraform, Packer &amp;amp; Ansible.&lt;/li>
+&lt;li>Python/Django/Flask&lt;/li>
+&lt;li>Linux&lt;/li>
+&lt;/ul>
+&lt;h3 id="education">Education:&lt;/h3>
+&lt;ul>
+&lt;li>07/05/05 – 21/02/12 BSc (Honours) Open – Open University&lt;/li>
+&lt;li>30/09/06 – 31/12/08 Diploma in Computing – Open University&lt;/li>
+&lt;li>07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University&lt;/li>
+&lt;li>2000 – 2001 BTEC HNC Computing and Software Engineering (Incomplete)&lt;/li>
+&lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
+&lt;/ul>
+&lt;h3 id="career-summary">Career Summary:&lt;/h3>
+&lt;p>&lt;strong>Oct 19 - Present day, Tesco Mobile, Slough&lt;/strong>&lt;br>
+&lt;strong>&lt;strong>Run &amp;amp; Operate Engineer (DevOps Engineer)&lt;/strong>&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
 &lt;ul>
 &lt;li>&lt;strong>Name:&lt;/strong> Andrew Foston&lt;/li>
 &lt;li>&lt;strong>Email:&lt;/strong> andy &amp;lsquo;at&amp;rsquo; foston.me&lt;/li>
