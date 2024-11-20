@@ -1,6 +1,6 @@
 +++
 Title = "Curriculum Vitae"
-date = "2021-8-10"
+date = "2021-08-10"
 +++
 
 ### Personal Information:
