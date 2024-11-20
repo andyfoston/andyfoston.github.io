@@ -4,10 +4,10 @@ date = "2021-08-10"
 author = "Andy"
 +++
 
-My name is Andy and I'm a software developer and Kubernetes adminstrator.
+My name is Andy and I'm a software developer and SRE.
 
-My main programming language is Python, but I'm also interested in Golang and Rust as well.
+My main programming language is Python, but I also work with Go and I'm interested/played with Rust as well.
 
-I live in Bracknell, UK with my wife, Amy, and our 3 kids Kian, Orla and Quinn.
+I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra
 
-{{< image src="/img/family.jpg" alt="Hello Friend" position="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" >}}
+{{< image src="/img/family.jpg" alt="Family photo with my wife and 4 kids" position="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" >}}
