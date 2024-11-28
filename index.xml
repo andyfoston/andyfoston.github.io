@@ -201,8 +201,8 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
-&lt;p>&lt;strong>Oct 19 - Present day, Tesco Mobile, Slough&lt;/strong>&lt;br>
-&lt;strong>&lt;strong>Run &amp;amp; Operate Engineer (DevOps Engineer)&lt;/strong>&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
+&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>
+&lt;strong>&lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
 &lt;ul>
 &lt;li>&lt;strong>Name:&lt;/strong> Andrew Foston&lt;/li>
 &lt;li>&lt;strong>Email:&lt;/strong> andy &amp;lsquo;at&amp;rsquo; foston.me&lt;/li>
@@ -227,10 +227,19 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
-&lt;p>&lt;strong>Oct 19 - Present day, Tesco Mobile, Slough&lt;/strong>&lt;br>
+&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>
+&lt;strong>&lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Split up existing Ansible roles into their own repos, added Ubuntu support, Molecule testing, linting and PR builds using Jenkins.&lt;/li>
+&lt;li>Upgraded &amp;gt;100 DataStax Cassandra clusters onto an up-to-date version and migrated the nodes from CentOS onto Ubuntu.&lt;/li>
+&lt;li>Implemented OpenTelemetry Collector for exporting trace data to Google’s Cloud Trace, and enabled features like tail sampling to forward complete traces of high latency or traffic with error responses for review.&lt;/li>
+&lt;li>Built custom Prometheus exporters using Go.&lt;/li>
+&lt;li>Deployed optional spot instance node types for Kubernetes to save costs for workloads that can handle interruptions.&lt;/li>
+&lt;/ul>
+&lt;p>&lt;strong>Oct 19 - Dec 21, Tesco Mobile, Slough&lt;/strong>
 &lt;strong>&lt;strong>Run &amp;amp; Operate Engineer (DevOps Engineer)&lt;/strong>&lt;/strong>&lt;/p>
 &lt;ul>
-&lt;li>Solely responsible for supporting AWS infrastructure, including multiple Kubernetes clusters and various EC2 machines using tools like Terraform, Packer and Helm.&lt;/li>
+&lt;li>Sole person responsible for supporting AWS infrastructure, including multiple Kubernetes clusters and various EC2 machines using tools like Terraform, Packer and Helm.&lt;/li>
 &lt;li>Implementing a service mesh (Istio) for greater visibility and control of traffic passing through the infrastructure.&lt;/li>
 &lt;li>Deploying updates to tools and Tesco Mobile services.&lt;/li>
 &lt;li>Maintaining Jenkins and GitHub actions CI/CD pipelines&lt;/li>
