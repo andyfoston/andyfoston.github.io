@@ -26,15 +26,17 @@ date = "2021-08-10"
 
 ### Career Summary:
 **Jan 22 - Present day, Sky UK, Isleworth**
-**__Senior Site Reliability Engineer__**
+**Senior Site Reliability Engineer**
 - Split up existing Ansible roles into their own repos, added Ubuntu support, Molecule testing, linting and PR builds using Jenkins.
 - Upgraded >100 DataStax Cassandra clusters onto an up-to-date version and migrated the nodes from CentOS onto Ubuntu.
 - Implemented OpenTelemetry Collector for exporting trace data to Google’s Cloud Trace, and enabled features like tail sampling to forward complete traces of high latency or traffic with error responses for review.
 - Built custom Prometheus exporters using Go.
 - Deployed optional spot instance node types for Kubernetes to save costs for workloads that can handle interruptions.
 
+***
+
 **Oct 19 - Dec 21, Tesco Mobile, Slough**
-**__Run & Operate Engineer (DevOps Engineer)__**
+**Run & Operate Engineer (DevOps Engineer)**
 - Sole person responsible for supporting AWS infrastructure, including multiple Kubernetes clusters and various EC2 machines using tools like Terraform, Packer and Helm.
 - Implementing a service mesh (Istio) for greater visibility and control of traffic passing through the infrastructure.
 - Deploying updates to tools and Tesco Mobile services.
