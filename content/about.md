@@ -5,9 +5,9 @@ lastmod = "2024-11-20"
 author = "Andy"
 +++
 
-My name is Andy and I'm a software developer and SRE.
+My name is Andy and I'm a Developer turned Site Reliability Engineer with many years experience working in both development and operations roles. During this time, I've worked with wide ranging technologies, such as developement languages like Python and Go, to Kubernetes, VMs, Cloud technologies (GCP, AWS and bespoke) and everything inbetween.
 
-My main programming language is Python, but I also work with Go and I'm interested/played with Rust as well.
+I enjoy backend developement and automation as well as learning and exploring new technologies.
 
 I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra
 

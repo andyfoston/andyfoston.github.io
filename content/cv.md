@@ -1,6 +1,7 @@
 +++
 Title = "Curriculum Vitae"
 date = "2021-08-10"
+lastmod = "2024-11-28"
 +++
 
 ### Personal Information:
