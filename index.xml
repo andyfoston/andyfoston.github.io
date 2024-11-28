@@ -170,11 +170,10 @@ The &lt;code>...StateFailed&lt;/code> triggers Firehose to write the log to the 
 this&amp;rsquo;ll trigger the event to not be forwared to Splunk and not to be written to the backup destination either.&lt;/p>
 &lt;h3 id="disclaimer">Disclaimer&lt;/h3>
 &lt;p>The code in here is a heavy stripped down and refactored version of what we&amp;rsquo;re using for our lambda, so these versions have not
-actually been tested directly, but should hopefully provide a basis to start from.&lt;/p></content></item><item><title>About Me</title><link>/about/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/about/</guid><description>&lt;p>My name is Andy and I&amp;rsquo;m a software developer and SRE.&lt;/p>
-&lt;p>My main programming language is Python, but I also work with Go and I&amp;rsquo;m interested/played with Rust as well.&lt;/p>
-&lt;p>I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra&lt;/p>
-&lt;img src="/img/family.jpg" alt="Family photo with my wife and 4 kids" class="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" /></description><content>&lt;p>My name is Andy and I&amp;rsquo;m a software developer and SRE.&lt;/p>
-&lt;p>My main programming language is Python, but I also work with Go and I&amp;rsquo;m interested/played with Rust as well.&lt;/p>
+actually been tested directly, but should hopefully provide a basis to start from.&lt;/p></content></item><item><title>About Me</title><link>/about/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/about/</guid><description>&lt;p>My name is Andy and I&amp;rsquo;m a Developer turned Site Reliability Engineer with many years experience working in both development and operations roles. During this time, I&amp;rsquo;ve worked with wide ranging technologies, such as developement languages like Python and Go, to Kubernetes, VMs, Cloud technologies (GCP, AWS and bespoke) and everything inbetween.&lt;/p>
+&lt;p>I enjoy backend developement and automation as well as learning and exploring new technologies.&lt;/p>
+&lt;p>I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra&lt;/p></description><content>&lt;p>My name is Andy and I&amp;rsquo;m a Developer turned Site Reliability Engineer with many years experience working in both development and operations roles. During this time, I&amp;rsquo;ve worked with wide ranging technologies, such as developement languages like Python and Go, to Kubernetes, VMs, Cloud technologies (GCP, AWS and bespoke) and everything inbetween.&lt;/p>
+&lt;p>I enjoy backend developement and automation as well as learning and exploring new technologies.&lt;/p>
 &lt;p>I live in Bracknell, UK with my wife, Amy, and our 4 kids: Kian, Orla, Quinn and Lyra&lt;/p>
 &lt;img src="/img/family.jpg" alt="Family photo with my wife and 4 kids" class="center" style="border-radius: 8px; border: 20px solid var(--accent); padding: 20px" /></content></item><item><title>Curriculum Vitae</title><link>/cv/</link><pubDate>Tue, 10 Aug 2021 00:00:00 +0000</pubDate><guid>/cv/</guid><description>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
 &lt;ul>
