@@ -12,17 +12,13 @@ date = "2021-08-10"
 - **GitHub Profile:**	[https://github.com/andyfoston](https://github.com/andyfoston)
 
 ### Notable Skills:
-- Kubernetes/Istio
-- IaC tools, like: Terraform, Packer & Ansible.
-- Python/Django/Flask
+- Kubernetes: Istio, OpenTelemetry Collector, Prometheus, Grafana
+- IaC: Terraform & Terratest
+- Cloud platforms: GCP & AWS
+- Configuration management: Ansible & Molecule
+- Programming: Python & Go
+- Persistence: MySQL, PostgreSQL & Cassandra
 - Linux
-
-### Education:
-- 07/05/05 – 21/02/12 BSc (Honours) Open – Open University
-- 30/09/06 – 31/12/08 Diploma in Computing – Open University
-- 07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University
-- 2000 – 2001 	 	BTEC HNC Computing and Software Engineering (Incomplete)
-- 1999 – 2000 		City & Guilds GNVQ Coding & Programming in ‘c’ 
 
 ### Career Summary:
 **Jan 22 - Present day, Sky UK, Isleworth**  
@@ -137,3 +133,11 @@ date = "2021-08-10"
 - Performing daily and nightly tasks, such as LES circuit availability checks, CUCM backup verifications.
 - Completing changes on customers’ live equipment, such as static route changes and SNMP configuration.
 
+***
+
+### Education:
+- 07/05/05 – 21/02/12 BSc (Honours) Open – Open University
+- 30/09/06 – 31/12/08 Diploma in Computing – Open University
+- 07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University
+- 2000 – 2001 	 	BTEC HNC Computing and Software Engineering (Incomplete)
+- 1999 – 2000 		City & Guilds GNVQ Coding & Programming in ‘c’ 
