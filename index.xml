@@ -201,7 +201,7 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
-&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>
+&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>&lt;br>
 &lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
 &lt;ul>
 &lt;li>&lt;strong>Name:&lt;/strong> Andrew Foston&lt;/li>
@@ -227,7 +227,7 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
-&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>
+&lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>&lt;br>
 &lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/p>
 &lt;ul>
 &lt;li>Split up existing Ansible roles into their own repos, added Ubuntu support, Molecule testing, linting and PR builds using Jenkins.&lt;/li>
@@ -237,7 +237,7 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>Deployed optional spot instance node types for Kubernetes to save costs for workloads that can handle interruptions.&lt;/li>
 &lt;/ul>
 &lt;hr>
-&lt;p>&lt;strong>Oct 19 - Dec 21, Tesco Mobile, Slough&lt;/strong>
+&lt;p>&lt;strong>Oct 19 - Dec 21, Tesco Mobile, Slough&lt;/strong>&lt;br>
 &lt;strong>Run &amp;amp; Operate Engineer (DevOps Engineer)&lt;/strong>&lt;/p>
 &lt;ul>
 &lt;li>Sole person responsible for supporting AWS infrastructure, including multiple Kubernetes clusters and various EC2 machines using tools like Terraform, Packer and Helm.&lt;/li>
