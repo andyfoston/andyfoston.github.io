@@ -187,22 +187,27 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;/ul>
 &lt;h3 id="notable-skills">Notable Skills:&lt;/h3>
 &lt;ul>
-&lt;li>Kubernetes/Istio&lt;/li>
-&lt;li>IaC tools, like: Terraform, Packer &amp;amp; Ansible.&lt;/li>
-&lt;li>Python/Django/Flask&lt;/li>
+&lt;li>Kubernetes: Istio, OpenTelemetry Collector, Prometheus, Grafana&lt;/li>
+&lt;li>IaC: Terraform &amp;amp; Terratest&lt;/li>
+&lt;li>Cloud platforms: GCP &amp;amp; AWS&lt;/li>
+&lt;li>Configuration management: Ansible &amp;amp; Molecule&lt;/li>
+&lt;li>Programming: Python &amp;amp; Go&lt;/li>
+&lt;li>Persistence: MySQL, PostgreSQL &amp;amp; Cassandra&lt;/li>
 &lt;li>Linux&lt;/li>
-&lt;/ul>
-&lt;h3 id="education">Education:&lt;/h3>
-&lt;ul>
-&lt;li>07/05/05 – 21/02/12 BSc (Honours) Open – Open University&lt;/li>
-&lt;li>30/09/06 – 31/12/08 Diploma in Computing – Open University&lt;/li>
-&lt;li>07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University&lt;/li>
-&lt;li>2000 – 2001 BTEC HNC Computing and Software Engineering (Incomplete)&lt;/li>
-&lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
 &lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>&lt;br>
-&lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
+&lt;strong>Senior Site Reliability Engineer&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>Split up existing Ansible roles into their own repos, added Ubuntu support, Molecule testing, linting and PR builds using Jenkins.&lt;/li>
+&lt;li>Upgraded &amp;gt;100 DataStax Cassandra clusters onto an up-to-date version and migrated the nodes from CentOS onto Ubuntu.&lt;/li>
+&lt;li>Implemented OpenTelemetry Collector for exporting trace data to Google’s Cloud Trace, and enabled features like tail sampling to forward complete traces of high latency or traffic with error responses for review.&lt;/li>
+&lt;li>Built custom Prometheus exporters using Go.&lt;/li>
+&lt;li>Deployed optional spot instance node types for Kubernetes to save costs for workloads that can handle interruptions.&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;p>&lt;strong>Oct 19 - Dec 21, Tesco Mobile, Slough&lt;/strong>&lt;br>
+&lt;strong>Run &amp;amp; Operate Engineer (DevOps Engineer)&lt;/strong>&lt;/p></description><content>&lt;h3 id="personal-information">Personal Information:&lt;/h3>
 &lt;ul>
 &lt;li>&lt;strong>Name:&lt;/strong> Andrew Foston&lt;/li>
 &lt;li>&lt;strong>Email:&lt;/strong> andy &amp;lsquo;at&amp;rsquo; foston.me&lt;/li>
@@ -213,18 +218,13 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;/ul>
 &lt;h3 id="notable-skills">Notable Skills:&lt;/h3>
 &lt;ul>
-&lt;li>Kubernetes/Istio&lt;/li>
-&lt;li>IaC tools, like: Terraform, Packer &amp;amp; Ansible.&lt;/li>
-&lt;li>Python/Django/Flask&lt;/li>
+&lt;li>Kubernetes: Istio, OpenTelemetry Collector, Prometheus, Grafana&lt;/li>
+&lt;li>IaC: Terraform &amp;amp; Terratest&lt;/li>
+&lt;li>Cloud platforms: GCP &amp;amp; AWS&lt;/li>
+&lt;li>Configuration management: Ansible &amp;amp; Molecule&lt;/li>
+&lt;li>Programming: Python &amp;amp; Go&lt;/li>
+&lt;li>Persistence: MySQL, PostgreSQL &amp;amp; Cassandra&lt;/li>
 &lt;li>Linux&lt;/li>
-&lt;/ul>
-&lt;h3 id="education">Education:&lt;/h3>
-&lt;ul>
-&lt;li>07/05/05 – 21/02/12 BSc (Honours) Open – Open University&lt;/li>
-&lt;li>30/09/06 – 31/12/08 Diploma in Computing – Open University&lt;/li>
-&lt;li>07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University&lt;/li>
-&lt;li>2000 – 2001 BTEC HNC Computing and Software Engineering (Incomplete)&lt;/li>
-&lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul>
 &lt;h3 id="career-summary">Career Summary:&lt;/h3>
 &lt;p>&lt;strong>Jan 22 - Present day, Sky UK, Isleworth&lt;/strong>&lt;br>
@@ -341,4 +341,13 @@ actually been tested directly, but should hopefully provide a basis to start fro
 &lt;li>Investigation and remote repair of faults; organising field engineers to attend faults that cannot be resolved remotely.&lt;/li>
 &lt;li>Performing daily and nightly tasks, such as LES circuit availability checks, CUCM backup verifications.&lt;/li>
 &lt;li>Completing changes on customers’ live equipment, such as static route changes and SNMP configuration.&lt;/li>
+&lt;/ul>
+&lt;hr>
+&lt;h3 id="education">Education:&lt;/h3>
+&lt;ul>
+&lt;li>07/05/05 – 21/02/12 BSc (Honours) Open – Open University&lt;/li>
+&lt;li>30/09/06 – 31/12/08 Diploma in Computing – Open University&lt;/li>
+&lt;li>07/05/05 – 31/07/06 Certificate in Computing and Mathematics – Open University&lt;/li>
+&lt;li>2000 – 2001 BTEC HNC Computing and Software Engineering (Incomplete)&lt;/li>
+&lt;li>1999 – 2000 City &amp;amp; Guilds GNVQ Coding &amp;amp; Programming in ‘c’&lt;/li>
 &lt;/ul></content></item></channel></rss>
